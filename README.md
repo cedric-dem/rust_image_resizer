@@ -1,0 +1,1 @@
+# rust_image_resizer

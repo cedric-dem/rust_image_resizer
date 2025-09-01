@@ -12,15 +12,15 @@ fn main() {
     let args: Vec<String> = env::args().collect();
     let path = PathBuf::from(input_path);
 
+    match count_images(&path) {
+        Ok(count) => println!("Found {} image(s) (png, jpg, jpeg)", count),
+        Err(e) => eprintln!("Error traversing {}: {}", path.display(), e),
+    }
+
     if args.len() > 1 && args[1] == "--resize" {
         match resize_images(&path, Path::new(output_path), 800, 600) {
             Ok(_) => println!("Images resized to {}", output_path),
             Err(e) => eprintln!("Failed to resize images: {}", e),
-        }
-    } else {
-        match count_images(&path) {
-            Ok(count) => println!("Found {} image(s) (png, jpg, jpeg)", count),
-            Err(e) => eprintln!("Error traversing {}: {}", path.display(), e),
         }
     }
 }

@@ -5,11 +5,16 @@ use std::path::{Path, PathBuf};
 use image::imageops::FilterType;
 
 fn main() {
-    // configuration
-    let input_path = "./input_images";
-    let output_path = "./output_images";
-
     let args: Vec<String> = env::args().collect();
+
+    if args.len() < 3 {
+        eprintln!("Usage: {} <input_path> <output_path> [--resize]", args[0]);
+        return;
+    }
+
+    let input_path = &args[1];
+    let output_path = &args[2];
+
     let path = PathBuf::from(input_path);
 
     println!("==> Start counting");
@@ -18,7 +23,7 @@ fn main() {
             println!("==> Finished counting");
             let total = jpg + jpeg + png;
 
-            if args.len() > 1 && args[1] == "--resize" {
+            if args.iter().any(|arg| arg == "--resize") {
                 println!("==> Start resize");
                 println!("currently done 0% of images");
                 if total > 0 {
@@ -37,7 +42,6 @@ fn main() {
                             if next_progress <= 100 {
                                 println!("currently done 100% of images");
                             }
-                            println!("Images resized to {}", output_path);
                         }
                         Err(e) => eprintln!("Failed to resize images: {}", e),
                     }

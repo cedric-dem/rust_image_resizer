@@ -26,7 +26,7 @@ fn main() {
 }
 
 fn count_images(dir: &Path) -> std::io::Result<u64> {
-    let mut recursive_count=0;
+    let mut recursive_count = 0;
     let mut count_jpg = 0;
     let mut count_jpeg = 0;
     let mut count_png = 0;
@@ -41,7 +41,7 @@ fn count_images(dir: &Path) -> std::io::Result<u64> {
             } else if path.is_file() {
                 if let Some(ext) = path.extension().and_then(|s| s.to_str()) {
                     let ext = ext.to_lowercase();
-                    if ext == "png"  {
+                    if ext == "png" {
                         count_png += 1;
                     } else if ext == "jpg" {
                         count_jpg += 1;
@@ -52,8 +52,8 @@ fn count_images(dir: &Path) -> std::io::Result<u64> {
             }
         }
     }
-    
-    Ok(recursive_count+count_png+count_jpg+count_jpeg)
+
+    Ok(recursive_count + count_png + count_jpg + count_jpeg)
 }
 
 fn resize_images(

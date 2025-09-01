@@ -13,7 +13,7 @@ fn main() {
     let path = PathBuf::from(input_path);
 
     match count_images(&path) {
-        Ok(count) => println!("==> Finished counting"),
+        Ok((_jpg, _jpeg, _png)) => println!("==> Finished counting"),
         Err(e) => eprintln!("Error traversing {}: {}", path.display(), e),
     }
 
@@ -24,8 +24,7 @@ fn main() {
         }
     }
 }
-
-fn count_images(dir: &Path) -> std::io::Result<u64> {
+fn count_images(dir: &Path) -> std::io::Result<(u64, u64, u64)> {
     let mut recursive_count = 0;
     let mut count_jpg = 0;
     let mut count_jpeg = 0;
@@ -37,7 +36,10 @@ fn count_images(dir: &Path) -> std::io::Result<u64> {
             let path = entry.path();
 
             if path.is_dir() {
-                recursive_count += count_images(&path)?;
+                let (jpg, jpeg, png) = count_images(&path)?;
+                count_jpg += jpg;
+                count_jpeg += jpeg;
+                count_png += png;
             } else if path.is_file() {
                 if let Some(ext) = path.extension().and_then(|s| s.to_str()) {
                     let ext = ext.to_lowercase();
@@ -52,8 +54,15 @@ fn count_images(dir: &Path) -> std::io::Result<u64> {
             }
         }
     }
+    println!(
+        "counted {} jpg, {} jpeg, {} png in path : {}/",
+        count_jpg,
+        count_jpeg,
+        count_png,
+        dir.display()
+    );
 
-    Ok(recursive_count + count_png + count_jpg + count_jpeg)
+    Ok((count_jpg, count_jpeg, count_png))
 }
 
 fn resize_images(

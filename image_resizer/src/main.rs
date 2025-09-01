@@ -2,18 +2,43 @@ use std::env;
 use std::fs;
 use std::path::{Path, PathBuf};
 
-use image::imageops::FilterType;
+use image::imageops::{overlay, FilterType};
+use image::{ImageBuffer, Rgba};
 
 fn main() {
     let args: Vec<String> = env::args().collect();
 
+    //todo : argument set all output format or keep same
+    //Todo : argv output dimension
+    //todo add new mode : blurred image
+
     if args.len() < 3 {
-        eprintln!("Usage: {} <input_path> <output_path> [--resize]", args[0]);
+        eprintln!(
+            "Usage: {} <input_path> <output_path> [--resize] [--mode <fit|stretch|letterbox>]",
+            args[0]
+        );
         return;
     }
 
     let input_path = &args[1];
     let output_path = &args[2];
+
+    let mut resize = false;
+    let mut mode = String::from("fit");
+    let mut i = 3;
+    while i < args.len() {
+        match args[i].as_str() {
+            "--resize" => resize = true,
+            "--mode" => {
+                if i + 1 < args.len() {
+                    mode = args[i + 1].clone();
+                    i += 1;
+                }
+            }
+            _ => {}
+        }
+        i += 1;
+    }
 
     let path = PathBuf::from(input_path);
 
@@ -23,7 +48,7 @@ fn main() {
             println!("==> Finished counting");
             let total = jpg + jpeg + png;
 
-            if args.iter().any(|arg| arg == "--resize") {
+            if resize{
                 println!("==> Start resize");
                 println!("currently done 0% of images");
                 if total > 0 {
@@ -37,6 +62,7 @@ fn main() {
                         &mut processed,
                         total,
                         &mut next_progress,
+                        &mode,
                     ) {
                         Ok(_) => {
                             if next_progress <= 100 {
@@ -103,6 +129,7 @@ fn resize_images(
     processed: &mut u64,
     total: u64,
     next_progress: &mut u64,
+    mode: &str,
 ) -> Result<(), Box<dyn std::error::Error>> {
     if !output.exists() {
         fs::create_dir_all(output)?;
@@ -123,13 +150,28 @@ fn resize_images(
                     processed,
                     total,
                     next_progress,
+                    mode,
                 )?;
             } else if path.is_file() {
                 if let Some(ext) = path.extension().and_then(|s| s.to_str()) {
                     let ext = ext.to_lowercase();
                     if ext == "png" || ext == "jpg" || ext == "jpeg" {
                         let img = image::open(&path)?;
-                        let resized = img.resize(width, height, FilterType::Lanczos3);
+
+                        let resized = match mode {
+                            "stretch" => img.resize_exact(width, height, FilterType::Lanczos3),
+                            "letterbox" => {
+                                let resized = img.resize(width, height, FilterType::Lanczos3);
+                                let mut canvas =
+                                    ImageBuffer::from_pixel(width, height, Rgba([0, 0, 0, 255]));
+                                let x = (width - resized.width()) / 2;
+                                let y = (height - resized.height()) / 2;
+                                overlay(&mut canvas, &resized.to_rgba8(), x as i64, y as i64);
+                                image::DynamicImage::ImageRgba8(canvas)
+                            }
+                            _ => img.resize(width, height, FilterType::Lanczos3),
+                        };
+
                         let out_path = output.join(path.file_name().unwrap());
                         resized.save(out_path)?;
                         *processed += 1;
